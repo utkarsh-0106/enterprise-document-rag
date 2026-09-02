@@ -1,2 +1,23 @@
 .env
 .DS_Store
+
+# Python
+__pycache__/
+*.py[cod]
+*.db
+
+# Virtual environment
+venv/
+
+# Environment
+.env
+
+# Generated storage
+storage/
+
+# OS
+.DS_Store
+
+# Frontend
+node_modules/
+dist/
