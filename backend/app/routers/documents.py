@@ -1,16 +1,27 @@
 from pathlib import Path
-import os
 import re
 import uuid
 from typing import List
 
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
+from fastapi import (
+    APIRouter,
+    BackgroundTasks,
+    Depends,
+    File,
+    HTTPException,
+    UploadFile,
+    status,
+)
 from sqlalchemy.orm import Session
 
 from ..api.auth import get_current_user
-from ..db import get_db
+from ..db import get_db, SessionLocal
 from ..models import Document
-from ..schemas import DocumentCreate, DocumentResponse, DocumentStatusResponse
+from ..schemas import (
+    DocumentCreate,
+    DocumentResponse,
+    DocumentStatusResponse,
+)
 from ..services.documents import (
     create_document,
     get_documents,
@@ -18,8 +29,13 @@ from ..services.documents import (
     delete_document,
     get_document_status,
 )
+from ..services.ingestion import ingest_document
 
-router = APIRouter(prefix="/api/documents", tags=["documents"])
+
+router = APIRouter(
+    prefix="/api/documents",
+    tags=["documents"],
+)
 
 STORAGE_DIR = Path("storage/documents")
 MAX_FILE_SIZE = 10 * 1024 * 1024
@@ -35,8 +51,40 @@ def sanitize_filename(filename: str) -> str:
     return filename
 
 
-@router.post("/upload", response_model=DocumentResponse)
+def ingest_document_background(
+    document_id: int,
+    user_id: int,
+):
+    """
+    Background task wrapper.
+
+    Creates a fresh database session because the original
+    request database session must not be reused by the
+    background task.
+    """
+    db = SessionLocal()
+
+    try:
+        ingest_document(
+            document_id=document_id,
+            db=db,
+            user_id=user_id,
+        )
+    except Exception as exc:
+        print(
+            f"Background ingestion failed for document "
+            f"{document_id}: {exc}"
+        )
+    finally:
+        db.close()
+
+
+@router.post(
+    "/upload",
+    response_model=DocumentResponse,
+)
 async def upload_document(
+    background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
     current_user=Depends(get_current_user),
     db: Session = Depends(get_db),
@@ -85,6 +133,7 @@ async def upload_document(
 
     except HTTPException:
         raise
+
     except Exception as exc:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -95,9 +144,15 @@ async def upload_document(
     safe_filename = sanitize_filename(original_filename)
 
     # UUID prevents collisions and path traversal.
-    stored_filename = f"{uuid.uuid4().hex}_{safe_filename}"
+    stored_filename = (
+        f"{uuid.uuid4().hex}_{safe_filename}"
+    )
 
-    STORAGE_DIR.mkdir(parents=True, exist_ok=True)
+    STORAGE_DIR.mkdir(
+        parents=True,
+        exist_ok=True,
+    )
+
     file_path = STORAGE_DIR / stored_filename
 
     file_path.write_bytes(content)
@@ -117,23 +172,41 @@ async def upload_document(
             current_user.id,
             str(file_path),
         )
+
+        # Start PDF ingestion after the response is prepared.
+        background_tasks.add_task(
+            ingest_document_background,
+            document.id,
+            current_user.id,
+        )
+
         return document
 
     except Exception:
         if file_path.exists():
             file_path.unlink()
+
         raise
 
 
-@router.get("/", response_model=List[DocumentResponse])
+@router.get(
+    "/",
+    response_model=List[DocumentResponse],
+)
 def list_documents(
     current_user=Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    return get_documents(db, current_user.id)
+    return get_documents(
+        db,
+        current_user.id,
+    )
 
 
-@router.get("/{document_id}", response_model=DocumentResponse)
+@router.get(
+    "/{document_id}",
+    response_model=DocumentResponse,
+)
 def get_document_route(
     document_id: int,
     current_user=Depends(get_current_user),
@@ -146,7 +219,10 @@ def get_document_route(
     )
 
 
-@router.get("/{document_id}/status", response_model=DocumentStatusResponse)
+@router.get(
+    "/{document_id}/status",
+    response_model=DocumentStatusResponse,
+)
 def get_document_status_route(
     document_id: int,
     current_user=Depends(get_current_user),
@@ -159,7 +235,10 @@ def get_document_status_route(
     )
 
 
-@router.delete("/{document_id}", response_model=bool)
+@router.delete(
+    "/{document_id}",
+    response_model=bool,
+)
 def delete_document_route(
     document_id: int,
     current_user=Depends(get_current_user),
@@ -170,6 +249,12 @@ def delete_document_route(
         document_id,
         current_user.id,
     )
+
+    if not document:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Document not found",
+        )
 
     file_path = Path(document.file_path)
 

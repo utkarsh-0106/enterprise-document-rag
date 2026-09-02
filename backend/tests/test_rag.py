@@ -1,5 +1,5 @@
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 from fastapi import HTTPException
@@ -192,7 +192,7 @@ def test_rag_rejects_empty_question():
     assert exc.value.status_code == 400
 
 
-def test_rag_requires_openai_key():
+def test_rag_uses_local_ollama():
     request = RagRequest(question="What is the policy?")
 
     retrieved_documents = [
@@ -210,20 +210,26 @@ def test_rag_requires_openai_key():
         )
     ]
 
+    fake_llm = Mock()
+    fake_response = Mock()
+    fake_response.content = "The company policy is described in policy.pdf."
+    fake_llm.invoke.return_value = fake_response
+
     with patch.object(
         rag,
         "similarity_search",
         return_value=retrieved_documents,
     ), patch.object(
-        rag.settings,
-        "OPENAI_API_KEY",
-        "",
+        rag,
+        "_get_llm",
+        return_value=fake_llm,
     ):
-        with pytest.raises(HTTPException) as exc:
-            rag.query_rag(request, user_id=1)
+        response = rag.query_rag(request, user_id=1)
 
-    assert exc.value.status_code == 503
-
+    assert response.answer == "The company policy is described in policy.pdf."
+    assert len(response.sources) == 1
+    assert response.sources[0]["filename"] == "policy.pdf"
+    assert response.sources[0]["page_number"] == 1
 def test_rag_returns_grounded_answer_and_sources():
     request = RagRequest(
         question="What is the leave policy?",

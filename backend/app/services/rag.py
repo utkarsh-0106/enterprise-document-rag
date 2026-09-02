@@ -1,22 +1,16 @@
 from fastapi import HTTPException
-from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
+from langchain_ollama import ChatOllama
 
 from backend.app.schemas.rag import RagRequest, RagResponse
-from backend.app.settings import settings
 from backend.app.services.vector_store import similarity_search
+from backend.app.settings import settings
 
 
-def _get_llm() -> ChatOpenAI:
-    if not settings.OPENAI_API_KEY:
-        raise HTTPException(
-            status_code=503,
-            detail="OPENAI_API_KEY is not configured",
-        )
-
-    return ChatOpenAI(
-        model=settings.OPENAI_CHAT_MODEL,
-        api_key=settings.OPENAI_API_KEY,
+def _get_llm() -> ChatOllama:
+    return ChatOllama(
+        model=settings.OLLAMA_CHAT_MODEL,
+        base_url=settings.OLLAMA_BASE_URL,
         temperature=0,
     )
 
@@ -25,6 +19,7 @@ def query_rag(
     rag_request: RagRequest,
     user_id: int,
 ) -> RagResponse:
+
     question = rag_request.question.strip()
 
     if not question:
@@ -38,9 +33,6 @@ def query_rag(
         min(rag_request.top_k or 5, 20),
     )
 
-    # Retrieval happens before LLM creation.
-    # This allows an empty document collection to return
-    # the correct "I don't know" response without an API key.
     try:
         results = similarity_search(
             query=question,
@@ -59,23 +51,31 @@ def query_rag(
             sources=[],
         )
 
-    # Only create the LLM when documents were actually retrieved.
-    llm = _get_llm()
-
     context_parts = []
     sources = []
 
     for document, score in results:
+
         metadata = document.metadata or {}
 
         document_id = metadata.get("document_id")
-        filename = metadata.get("filename", "Unknown")
-        page_number = metadata.get("page_number", "Unknown")
+        filename = metadata.get(
+            "filename",
+            "Unknown",
+        )
+        page_number = metadata.get(
+            "page_number",
+            "Unknown",
+        )
 
         context_parts.append(
-            f"Document: {filename}\n"
-            f"Page: {page_number}\n"
-            f"Content:\n{document.page_content}"
+            f"""
+Document: {filename}
+Page: {page_number}
+
+Content:
+{document.page_content}
+"""
         )
 
         sources.append(
@@ -94,15 +94,20 @@ def query_rag(
         [
             (
                 "system",
-                """You are an enterprise document assistant.
+                """
+You are an enterprise document assistant.
 
-Answer the user's question ONLY using the supplied document context.
+Answer the user's question ONLY using the supplied
+document context.
 
 Rules:
+
 - Do not invent facts.
-- If the answer is not present in the context, say you don't know.
+- If the answer is not present in the context,
+  say you don't know.
 - Use only information supported by the context.
-- Mention the relevant document filename and page when appropriate.
+- Mention the relevant document filename and page
+  when appropriate.
 - Keep the answer clear and concise.
 
 Document context:
@@ -118,6 +123,9 @@ Document context:
     )
 
     try:
+
+        llm = _get_llm()
+
         messages = prompt.invoke(
             {
                 "context": context,
@@ -132,10 +140,8 @@ Document context:
             sources=sources,
         )
 
-    except HTTPException:
-        raise
-
     except Exception as exc:
+
         raise HTTPException(
             status_code=500,
             detail=f"RAG generation failed: {exc}",

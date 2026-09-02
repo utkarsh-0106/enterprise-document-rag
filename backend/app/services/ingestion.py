@@ -5,6 +5,7 @@ from langchain_core.documents import Document as LangChainDocument
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from pypdf import PdfReader
 from sqlalchemy.orm import Session
+from backend.app.db import SessionLocal
 
 from backend.app.models import Document
 from backend.app.services.documents import get_document
@@ -132,3 +133,17 @@ def reprocess_document(
         db=db,
         user_id=user_id,
     )
+def ingest_document_background(
+    document_id: int,
+    user_id: int,
+) -> None:
+    db = SessionLocal()
+
+    try:
+        ingest_document(
+            document_id=document_id,
+            db=db,
+            user_id=user_id,
+        )
+    finally:
+        db.close()

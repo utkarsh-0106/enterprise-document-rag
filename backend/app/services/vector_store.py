@@ -3,7 +3,7 @@ from typing import Iterable
 
 from langchain_chroma import Chroma
 from langchain_core.documents import Document as LangChainDocument
-from langchain_openai import OpenAIEmbeddings
+from langchain_ollama import OllamaEmbeddings
 
 from backend.app.settings import settings
 
@@ -11,17 +11,10 @@ from backend.app.settings import settings
 COLLECTION_NAME = "enterprise_documents"
 
 
-def _require_api_key() -> None:
-    if not settings.OPENAI_API_KEY:
-        raise RuntimeError("OPENAI_API_KEY is not configured")
-
-
-def get_embeddings() -> OpenAIEmbeddings:
-    _require_api_key()
-
-    return OpenAIEmbeddings(
-        model=settings.OPENAI_EMBEDDING_MODEL,
-        api_key=settings.OPENAI_API_KEY,
+def get_embeddings() -> OllamaEmbeddings:
+    return OllamaEmbeddings(
+        model=settings.OLLAMA_EMBEDDING_MODEL,
+        base_url=settings.OLLAMA_BASE_URL,
     )
 
 
@@ -45,6 +38,7 @@ def add_chunks(chunks: Iterable[LangChainDocument]) -> list[str]:
         return []
 
     vector_store = get_vector_store()
+
     return vector_store.add_documents(chunks)
 
 
@@ -54,7 +48,7 @@ def delete_document_vectors(document_id: int) -> None:
     collection = vector_store._collection
 
     result = collection.get(
-        where={"document_id": document_id}
+        where={"document_id": int(document_id)}
     )
 
     ids = result.get("ids", [])
@@ -73,5 +67,5 @@ def similarity_search(
     return vector_store.similarity_search_with_score(
         query,
         k=k,
-        filter={"user_id": user_id},
+        filter={"user_id": int(user_id)},
     )
