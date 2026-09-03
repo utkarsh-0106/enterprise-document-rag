@@ -13,7 +13,7 @@ Instead of relying on the model's general knowledge, Jango retrieves relevant in
 ## 🚀 Live Demo
 
 ### Frontend
-https://enterprise-document-rag-gamma.vercel.app
+https://enterprise-document-iipopko80-utkarsh-0106s-projects.vercel.app/register
 
 > The frontend is deployed using Vercel.
 
