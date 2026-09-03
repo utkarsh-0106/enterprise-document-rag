@@ -1,8 +1,19 @@
+import logo from "../assets/logo.png";
+import jangoAvatar from "../assets/jango-avatar.png";
+
+
 import { useEffect, useRef, useState } from "react";
+import { Link } from "react-router-dom";
+
 import { useAuth } from "../context/AuthContext";
 import api from "../api/axios";
 
-const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:8000";
+import aiHero from "../assets/ai-hero.png";
+import documentsImage from "../assets/documents.png";
+
+import Sidebar from "../components/Sidebar";
+import AskJangoCard from "../components/AskJangoCard";
+
 
 function formatBytes(bytes) {
   if (!bytes) return "0 B";
@@ -21,7 +32,9 @@ function formatDate(date) {
 }
 
 function statusLabel(status) {
-  return status ? status.charAt(0).toUpperCase() + status.slice(1) : "Unknown";
+  return status
+    ? status.charAt(0).toUpperCase() + status.slice(1)
+    : "Unknown";
 }
 
 export default function Dashboard() {
@@ -39,13 +52,11 @@ export default function Dashboard() {
   async function fetchDocuments() {
     try {
       setError("");
-
       const response = await api.get("/api/documents/");
       setDocuments(response.data);
     } catch (err) {
       setError(
-        err.response?.data?.detail ||
-          "Unable to load your documents."
+        err.response?.data?.detail || "Unable to load your documents."
       );
     } finally {
       setLoading(false);
@@ -58,7 +69,6 @@ export default function Dashboard() {
 
   async function handleUpload(event) {
     const file = event.target.files?.[0];
-
     if (!file) return;
 
     setError("");
@@ -66,6 +76,12 @@ export default function Dashboard() {
 
     if (file.type !== "application/pdf") {
       setError("Only PDF files are supported.");
+      event.target.value = "";
+      return;
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+      setError("File size must be 10 MB or less.");
       event.target.value = "";
       return;
     }
@@ -86,8 +102,7 @@ export default function Dashboard() {
       await fetchDocuments();
     } catch (err) {
       setError(
-        err.response?.data?.detail ||
-          "Document upload failed."
+        err.response?.data?.detail || "Document upload failed."
       );
     } finally {
       setUploading(false);
@@ -125,40 +140,34 @@ export default function Dashboard() {
   }
 
   const totalDocuments = documents.length;
+
   const readyDocuments = documents.filter(
     (document) => document.status === "ready"
   ).length;
+
   const processingDocuments = documents.filter(
     (document) =>
       document.status === "processing" ||
       document.status === "uploaded"
   ).length;
+
   const failedDocuments = documents.filter(
     (document) => document.status === "failed"
   ).length;
 
   return (
-    <div className="dashboard">
-      <nav className="navbar">
-        <div className="brand">JANGO RAG</div>
+    <div className="dashboard jango-dashboard dashboard-shell">
 
-        <div className="nav-right">
-          <span className="user-name">
-            {user?.username}
-          </span>
+       {/* LEFT SIDEBAR */}
+    <Sidebar />
 
-          <button
-            className="logout-button"
-            onClick={logout}
-          >
-            Logout
-          </button>
-        </div>
-      </nav>
+    {/* CENTER DASHBOARD */}
+    <div className="dashboard-main-area">
 
-      <main className="dashboard-content">
-        <section className="dashboard-header">
-          <div>
+
+      <main className="dashboard-content jango-dashboard-content">
+        <section className="dashboard-header jango-hero">
+          <div className="jango-hero-content">
             <p className="eyebrow">KNOWLEDGE BASE</p>
 
             <h1>
@@ -169,6 +178,24 @@ export default function Dashboard() {
               Upload your enterprise documents and build
               your private knowledge base.
             </p>
+
+            <div className="hero-actions">
+              <Link className="hero-primary" to="/chat">
+                Ask Jango →
+              </Link>
+
+              <span className="hero-status">
+                <span />
+                Knowledge base online
+              </span>
+            </div>
+          </div>
+
+          <div className="jango-hero-visual">
+            <img
+              src={aiHero}
+              alt="Jango AI knowledge network"
+            />
           </div>
         </section>
 
@@ -188,7 +215,7 @@ export default function Dashboard() {
 
         <section className="stats-grid">
           <div className="stat-card">
-            <div className="stat-icon">📚</div>
+            <div className="stat-icon stat-purple">▣</div>
             <div>
               <span>Total Documents</span>
               <strong>{totalDocuments}</strong>
@@ -196,7 +223,7 @@ export default function Dashboard() {
           </div>
 
           <div className="stat-card">
-            <div className="stat-icon">✓</div>
+            <div className="stat-icon stat-green">✓</div>
             <div>
               <span>Ready</span>
               <strong>{readyDocuments}</strong>
@@ -204,7 +231,7 @@ export default function Dashboard() {
           </div>
 
           <div className="stat-card">
-            <div className="stat-icon">◌</div>
+            <div className="stat-icon stat-blue">◌</div>
             <div>
               <span>Processing</span>
               <strong>{processingDocuments}</strong>
@@ -212,7 +239,7 @@ export default function Dashboard() {
           </div>
 
           <div className="stat-card">
-            <div className="stat-icon">!</div>
+            <div className="stat-icon stat-red">!</div>
             <div>
               <span>Failed</span>
               <strong>{failedDocuments}</strong>
@@ -221,19 +248,17 @@ export default function Dashboard() {
         </section>
 
         <section className="upload-card">
-          <div className="upload-icon">↑</div>
+          <div className="upload-illustration">
+            <img src={documentsImage} alt="" />
+          </div>
 
           <div className="upload-content">
+            <p className="upload-kicker">DOCUMENT INGESTION</p>
             <h2>Upload a document</h2>
-
             <p>
-              Add a PDF to your private enterprise knowledge
-              base.
+              Add a PDF to your private enterprise knowledge base.
             </p>
-
-            <small>
-              PDF files only · Maximum size 10 MB
-            </small>
+            <small>PDF files only · Maximum size 10 MB</small>
           </div>
 
           <input
@@ -253,13 +278,12 @@ export default function Dashboard() {
           </button>
         </section>
 
-        <section className="documents-section">
+        <section id="documents" className="documents-section">
           <div className="section-header">
             <div>
+              <p className="eyebrow">YOUR KNOWLEDGE</p>
               <h2>Your Documents</h2>
-              <p>
-                Manage the documents in your knowledge base.
-              </p>
+              <p>Manage the documents in your knowledge base.</p>
             </div>
 
             <button
@@ -278,10 +302,10 @@ export default function Dashboard() {
             </div>
           ) : documents.length === 0 ? (
             <div className="empty-state">
-              <div className="empty-icon">📄</div>
-
+              <div className="empty-visual">
+                <img src={documentsImage} alt="" />
+              </div>
               <h3>No documents yet</h3>
-
               <p>
                 Upload your first PDF to start building your
                 knowledge base.
@@ -305,15 +329,10 @@ export default function Dashboard() {
                     <tr key={document.id}>
                       <td>
                         <div className="document-name">
-                          <span className="pdf-icon">
-                            PDF
-                          </span>
+                          <span className="pdf-icon">PDF</span>
 
                           <div>
-                            <strong>
-                              {document.filename}
-                            </strong>
-
+                            <strong>{document.filename}</strong>
                             <small>
                               Document #{document.id}
                             </small>
@@ -321,9 +340,7 @@ export default function Dashboard() {
                         </div>
                       </td>
 
-                      <td>
-                        {formatBytes(document.file_size)}
-                      </td>
+                      <td>{formatBytes(document.file_size)}</td>
 
                       <td>
                         {formatDate(document.created_at)}
@@ -365,28 +382,39 @@ export default function Dashboard() {
           )}
         </section>
 
-<section className="chat-feature-card">
-  <div className="chat-feature-content">
-    <span className="next-label">PRIVATE KNOWLEDGE ASSISTANT</span>
+        <section className="chat-feature-card">
+          <div className="chat-feature-content">
+            <span className="next-label">
+              PRIVATE KNOWLEDGE ASSISTANT
+            </span>
 
-    <h2>Ask Jango about your documents</h2>
+            <h2>Ask Jango about your documents</h2>
 
-    <p>
-      Your documents are ready. Ask questions and get answers
-      grounded in your uploaded documents with page-level sources.
-    </p>
-  </div>
+            <p>
+              Your documents are ready. Ask questions and get
+              answers grounded in your uploaded documents with
+              page-level sources.
+            </p>
 
-  <button
-    className="chat-button"
-    onClick={() => {
-      window.location.href = "/chat";
-    }}
-  >
-    Ask Jango →
-  </button>
-</section>
+            <Link className="chat-button" to="/chat">
+              Ask Jango →
+            </Link>
+          </div>
+
+          <div className="chat-feature-image">
+            <img
+              src={jangoAvatar}
+              alt="Jango AI assistant"
+            />
+          </div>
+        </section>
       </main>
     </div>
+     {/* RIGHT ASK JANGO PANEL */}
+    <AskJangoCard
+      documentCount={documents.length}
+    />
+
+  </div>
   );
 }

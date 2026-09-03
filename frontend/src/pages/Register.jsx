@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { getApiErrorMessage } from "../api/error";
+import authAI from "../assets/auth-ai.png";
 
 export default function Register() {
   const navigate = useNavigate();
@@ -36,6 +37,70 @@ export default function Register() {
 
   return (
     <div className="auth-page">
+
+      <div className="auth-showcase">
+
+        <div className="showcase-brand">
+          <span>✦</span>
+          <div>
+            <strong>JANGO</strong>
+            <small>PRIVATE AI</small>
+          </div>
+        </div>
+
+        <div className="showcase-visual">
+          <div className="showcase-orbit orbit-one"></div>
+          <div className="showcase-orbit orbit-two"></div>
+
+          <img
+            src={authAI}
+            alt="Jango private AI"
+          />
+
+          <div className="floating-node node-one">
+            <span>✦</span>
+            Knowledge
+          </div>
+
+          <div className="floating-node node-two">
+            <span>◈</span>
+            RAG Engine
+          </div>
+
+          <div className="floating-node node-three">
+            <span>✓</span>
+            Private
+          </div>
+        </div>
+
+        <div className="showcase-copy">
+          <span className="showcase-eyebrow">
+            BUILD YOUR KNOWLEDGE BASE
+          </span>
+
+          <h2>
+            Turn documents
+            <br />
+            <span>into intelligence.</span>
+          </h2>
+
+          <p>
+            Create your private AI workspace and
+            let Jango understand the information
+            that matters to you.
+          </p>
+
+          <div className="showcase-flow">
+            <span>Upload</span>
+            <b>→</b>
+            <span>Understand</span>
+            <b>→</b>
+            <span>Ask</span>
+          </div>
+        </div>
+
+      </div>
+
       <div className="auth-card">
         <div className="brand">JANGO RAG</div>
 
