@@ -12,16 +12,18 @@ Instead of relying on the model's general knowledge, Jango retrieves relevant in
 
 ## 🚀 Live Demo
 
-### Frontend
-https://enterprise-document-iipopko80-utkarsh-0106s-projects.vercel.app/register
+> **Live deployment coming soon.**
 
-> The frontend is deployed using Vercel.
+Jango is currently available for local development and testing.
 
-### Backend
+The application consists of a React frontend and a FastAPI backend,
+with the backend handling authentication, document processing,
+semantic retrieval, and the RAG pipeline.
 
-The FastAPI backend can be exposed securely for development/demo purposes using Cloudflare Tunnel.
+Production deployment is planned as a future improvement.
 
-> Note: The current demo backend runs from the developer's local environment through a Cloudflare Quick Tunnel. Quick Tunnel URLs are temporary and may change when the tunnel is restarted.
+For instructions on running Jango locally, see
+[Getting Started](#-getting-started).
 
 ---
 
