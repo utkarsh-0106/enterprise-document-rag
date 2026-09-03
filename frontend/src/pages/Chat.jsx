@@ -1,6 +1,11 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
+
 import api from "../api/axios";
+
+import chatAI from "../assets/chat-ai.png";
+import jangoAvatar from "../assets/jango-avatar.png";
+import logo from "../assets/logo.png";
 
 export default function Chat() {
   const [question, setQuestion] = useState("");
@@ -50,22 +55,40 @@ export default function Chat() {
     }
   }
 
+  function useSuggestion(text) {
+    setQuestion(text);
+  }
+
   return (
-    <div className="chat-page">
-      <nav className="navbar">
-        <div className="brand">JANGO RAG</div>
+    <div className="chat-page jango-chat-page">
+      <nav className="navbar jango-navbar">
+        <Link to="/dashboard" className="jango-brand">
+          <img src={logo} alt="Jango" />
+          <span>
+            <strong>JANGO</strong>
+            <small>PRIVATE AI</small>
+          </span>
+        </Link>
+
+        <div className="jango-nav-links">
+          <Link to="/dashboard">
+            Dashboard
+          </Link>
+
+          <Link className="active" to="/chat">
+            Ask Jango
+          </Link>
+        </div>
 
         <Link to="/dashboard" className="back-button">
           ← Dashboard
         </Link>
       </nav>
 
-      <main className="chat-content">
+      <main className="chat-content jango-chat-content">
         <header className="chat-header">
           <p className="eyebrow">PRIVATE KNOWLEDGE ASSISTANT</p>
-
           <h1>Ask Jango</h1>
-
           <p>
             Ask questions about your uploaded documents and get
             answers grounded in their content.
@@ -75,42 +98,59 @@ export default function Chat() {
         <section className="chat-container">
           {messages.length === 0 && (
             <div className="chat-empty">
-              <div className="chat-empty-icon">✦</div>
+              <div className="chat-ai-visual">
+                <img
+                  src={chatAI}
+                  alt="Jango AI assistant"
+                />
+              </div>
 
-              <h2>What would you like to know?</h2>
+              <div className="chat-empty-copy">
+                <span className="chat-online">
+                  <span />
+                  JANGO IS READY
+                </span>
 
-              <p>
-                Ask something about your uploaded documents.
-              </p>
+                <h2>Hello, I'm Jango 👋</h2>
+
+                <p>
+                  Ask me anything about your uploaded documents.
+                  I'll find the answer using your private knowledge
+                  base.
+                </p>
+              </div>
 
               <div className="suggested-questions">
                 <button
                   onClick={() =>
-                    setQuestion(
+                    useSuggestion(
                       "What programming languages and technical skills does this person have?"
                     )
                   }
                 >
+                  <span>↗</span>
                   What are the technical skills?
                 </button>
 
                 <button
                   onClick={() =>
-                    setQuestion(
+                    useSuggestion(
                       "What projects has this person worked on?"
                     )
                   }
                 >
+                  <span>↗</span>
                   What projects are mentioned?
                 </button>
 
                 <button
                   onClick={() =>
-                    setQuestion(
+                    useSuggestion(
                       "Summarize this person's experience."
                     )
                   }
                 >
+                  <span>↗</span>
                   Summarize the experience
                 </button>
               </div>
@@ -124,12 +164,21 @@ export default function Chat() {
                 className={`message-row ${message.role}`}
               >
                 <div className="message-avatar">
-                  {message.role === "user" ? "U" : "J"}
+                  {message.role === "user" ? (
+                    "U"
+                  ) : (
+                    <img
+                      src={jangoAvatar}
+                      alt=""
+                    />
+                  )}
                 </div>
 
                 <div className="message-body">
                   <span className="message-role">
-                    {message.role === "user" ? "You" : "Jango"}
+                    {message.role === "user"
+                      ? "You"
+                      : "Jango"}
                   </span>
 
                   <div className="message-content">
@@ -141,28 +190,30 @@ export default function Chat() {
                       <div className="sources">
                         <h3>Sources</h3>
 
-                        {message.sources.map((source, sourceIndex) => (
-                          <div
-                            className="source-card"
-                            key={sourceIndex}
-                          >
-                            <div className="source-number">
-                              {sourceIndex + 1}
-                            </div>
+                        {message.sources.map(
+                          (source, sourceIndex) => (
+                            <div
+                              className="source-card"
+                              key={sourceIndex}
+                            >
+                              <div className="source-number">
+                                {sourceIndex + 1}
+                              </div>
 
-                            <div>
-                              <strong>
-                                {source.filename ||
-                                  "Document"}
-                              </strong>
+                              <div>
+                                <strong>
+                                  {source.filename ||
+                                    "Document"}
+                                </strong>
 
-                              <span>
-                                Page{" "}
-                                {source.page_number || "—"}
-                              </span>
+                                <span>
+                                  Page{" "}
+                                  {source.page_number || "—"}
+                                </span>
+                              </div>
                             </div>
-                          </div>
-                        ))}
+                          )
+                        )}
                       </div>
                     )}
                 </div>
@@ -171,16 +222,25 @@ export default function Chat() {
 
             {loading && (
               <div className="message-row assistant">
-                <div className="message-avatar">J</div>
+                <div className="message-avatar">
+                  <img
+                    src={jangoAvatar}
+                    alt=""
+                  />
+                </div>
 
                 <div className="message-body">
-                  <span className="message-role">Jango</span>
+                  <span className="message-role">
+                    Jango
+                  </span>
 
                   <div className="typing-indicator">
                     <span />
                     <span />
                     <span />
-                    <em>Searching your knowledge base...</em>
+                    <em>
+                      Searching your knowledge base...
+                    </em>
                   </div>
                 </div>
               </div>
@@ -219,7 +279,9 @@ export default function Chat() {
 
             <button
               type="submit"
-              disabled={loading || !question.trim()}
+              disabled={
+                loading || !question.trim()
+              }
             >
               {loading ? "Thinking..." : "Ask Jango ↑"}
             </button>

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { getApiErrorMessage } from "../api/error";
+import authAI from "../assets/auth-ai.png";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -35,6 +36,70 @@ export default function Login() {
 
   return (
     <div className="auth-page">
+
+      <div className="auth-showcase">
+
+        <div className="showcase-brand">
+          <span>✦</span>
+          <div>
+            <strong>JANGO</strong>
+            <small>PRIVATE AI</small>
+          </div>
+        </div>
+
+        <div className="showcase-visual">
+          <div className="showcase-orbit orbit-one"></div>
+          <div className="showcase-orbit orbit-two"></div>
+
+          <img
+            src={authAI}
+            alt="Jango private AI"
+          />
+
+          <div className="floating-node node-one">
+            <span>✦</span>
+            Knowledge
+          </div>
+
+          <div className="floating-node node-two">
+            <span>◈</span>
+            RAG Engine
+          </div>
+
+          <div className="floating-node node-three">
+            <span>✓</span>
+            Private
+          </div>
+        </div>
+
+        <div className="showcase-copy">
+          <span className="showcase-eyebrow">
+            PRIVATE INTELLIGENCE
+          </span>
+
+          <h2>
+            Your documents.
+            <br />
+            <span>Your intelligence.</span>
+          </h2>
+
+          <p>
+            Upload your knowledge, ask questions,
+            and get intelligent answers grounded
+            in your own documents.
+          </p>
+
+          <div className="showcase-flow">
+            <span>Documents</span>
+            <b>→</b>
+            <span>Knowledge</span>
+            <b>→</b>
+            <span>Answers</span>
+          </div>
+        </div>
+
+      </div>
+
       <div className="auth-card">
         <div className="brand">JANGO RAG</div>
 

@@ -15,5 +15,6 @@ pypdf>=3.0.0
 langchain>=0.2.11
 langchain-text-splitters>=0.2.1
 chromadb>=0.4.21
-openai>=1.0.0langchain-ollama
+langchain-chroma
+
 langchain-ollama
